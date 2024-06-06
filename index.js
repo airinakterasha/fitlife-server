@@ -76,17 +76,44 @@ async function run() {
     // =============== API for User ======================
 
     //create
-    app.post('/user', async(req, res) => {
+    app.post('/users', async(req, res) => {
       const user = req.body;
       console.log(user);
       const result = await userCollection.insertOne(user);
       res.send(result);
     })
     //get all users
-    app.get('/user', async(req, res) => {
+    app.get('/users', async(req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    })
+
+    // make role admin update
+    app.patch('/users/admin/:id', verifyToken, async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+    // get admin
+    app.get('/users/admin/:email', verifyToken, async(req, res) => {
+      const email = req.params.email;
+      if(email !== req.decoded.email) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      const query = {email: email}
+      const user = await userCollection.findOne(query);
+      let admin = false;
+      if (user){
+        admin = user?.role === 'admin';
+      }
+      res.send({admin});
     })
 
   
