@@ -66,12 +66,6 @@ async function run() {
       });
     }
 
-    // app.post('/logout', async(req, res) => {
-    //   const user = req.body;
-    //   console.log('logging out', user);
-    //   res.clearCookie('token', {maxAge: 0}).send({success: true})
-    // })
-
 
     // =============== API for User ======================
 
@@ -83,7 +77,7 @@ async function run() {
       res.send(result);
     })
     //get all users
-    app.get('/users', async(req, res) => {
+    app.get('/users', verifyToken, async(req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
