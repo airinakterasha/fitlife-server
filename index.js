@@ -37,6 +37,7 @@ async function run() {
 
     //create database
     const userCollection = client.db("fitLifeDb").collection('user');
+    const trainerCollection = client.db("fitLifeDb").collection('trainer');
 
 
     // =============== auth related api ======================
@@ -72,6 +73,12 @@ async function run() {
     //create
     app.post('/users', async(req, res) => {
       const user = req.body;
+      //save user if he or she does not exist in the database
+      const query = {email:user.email}
+      const existingUser = await userCollection.findOne(query);
+      if(existingUser){
+        return res.send({message: 'user already exists', insertedId: null})
+      }
       console.log(user);
       const result = await userCollection.insertOne(user);
       res.send(result);
@@ -108,6 +115,18 @@ async function run() {
         admin = user?.role === 'admin';
       }
       res.send({admin});
+    })
+
+    // Be a trainer related api
+    app.post('/betrainer', verifyToken, async(req, res) => {
+      const trainer = req.body;
+      const result = await trainerCollection.insertOne(trainer);
+      res.send(result);
+    })
+    // get all trainer
+    app.get('/betrainer', async(req, res) => {
+      const result = await trainerCollection.find().toArray();
+      res.send(result);
     })
 
   
