@@ -38,6 +38,8 @@ async function run() {
     //create database
     const userCollection = client.db("fitLifeDb").collection('user');
     const trainerCollection = client.db("fitLifeDb").collection('trainer');
+    const classCollection = client.db("fitLifeDb").collection('classes');
+    const slotCollection = client.db("fitLifeDb").collection('slot');
 
 
     // =============== auth related api ======================
@@ -236,10 +238,31 @@ async function run() {
       res.send({trainer});
     })
 
-  
+    // class related api
+     //create
+    app.post('/class', async(req, res) => {
+    const classes = req.body;
+    console.log(classes);
+    const result = await classCollection.insertOne(classes);
+    res.send(result);
+    })
+    //get all
+    app.get('/class', async(req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    })
 
-
-
+    // add new slot
+    //create
+    app.post('/slot', async(req, res) => {
+      const slot = req.body;
+      const result = await slotCollection.insertOne(slot);
+      res.send(result);
+    })
+    app.get('/slot', async(req, res) => {
+      const result = await slotCollection.find().toArray();
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
