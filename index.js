@@ -251,6 +251,14 @@ async function run() {
       const result = await classCollection.find().toArray();
       res.send(result);
     })
+    //get single class
+    app.get('/class/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await classCollection.findOne(query);
+      //console.log(result);
+      res.send(result)
+    })
 
     // add new slot
     //create
@@ -261,6 +269,12 @@ async function run() {
     })
     app.get('/slot', async(req, res) => {
       const result = await slotCollection.find().toArray();
+      res.send(result);
+    })
+    app.get('/slot:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await slotCollection.findOne(query);
       res.send(result);
     })
 
