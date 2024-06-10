@@ -177,6 +177,16 @@ async function run() {
       //console.log(result);
       res.send(result)
     })
+
+    //get by email
+    app.get('/trainer/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {email:email}
+      const result = await trainerCollection.findOne(query);
+      console.log(result);
+      res.send(result)
+    })
+
     app.patch('/betrainer/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
