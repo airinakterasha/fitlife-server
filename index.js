@@ -41,7 +41,7 @@ async function run() {
     const classCollection = client.db("fitLifeDb").collection('classes');
     const slotCollection = client.db("fitLifeDb").collection('slot');
     const packageCollection = client.db("fitLifeDb").collection('pack');
-    const cartCollection = client.db("bistroDb").collection("carts");
+    const cartCollection = client.db("fitLifeDb").collection("carts");
 
     
 
@@ -290,6 +290,21 @@ async function run() {
       const result = await slotCollection.findOne(query);
       res.send(result);
     })
+
+    // app.delete('/users/:id', verifyToken, verifyAdmin, async(req, res) => {
+    //   const id = req.params.id;
+    //   const query = {_id: new ObjectId(id)}
+    //   const result = await userCollection.deleteOne(query);
+    //   res.send(result);
+    // })
+    // delete slot
+    app.delete('/slot/:id', verifyToken, async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await slotCollection.deleteOne(query);
+      res.send(result);
+    })
+
     app.get('/availslot/:email', async(req, res) => {
       const email = req.params.email;
       const query = {email: email}
@@ -320,21 +335,16 @@ async function run() {
       res.send(result);
     })
     //get all cart
-    // app.get('/carts', async(req, res) => {
-    //   const result = await cartCollection.find().toArray();
-    //   res.send(result);
-    // })
+    app.get('/carts', async(req, res) => {
+      const result = await cartCollection.find().toArray();
+      res.send(result);
+    })
 
-    //get only those cart which email's user added the cart
-    // app.get('/carts', async(req, res) => {
-    //   const email = req.query.email;
-    //   const query = {email: email}
-    //   const result = await cartCollection.find(query).toArray();
-    //   res.send(result);
-    // })
-    app.get('/carts/:email', async(req, res) => {
+
+    app.get('/cart', async(req, res) => {
       const email = req.query.email;
       const query = {email: email}
+      console.log(query)
       const result = await cartCollection.find(query).toArray();
       res.send(result);
     })
