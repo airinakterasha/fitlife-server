@@ -40,7 +40,10 @@ async function run() {
     const trainerCollection = client.db("fitLifeDb").collection('trainer');
     const classCollection = client.db("fitLifeDb").collection('classes');
     const slotCollection = client.db("fitLifeDb").collection('slot');
+    const packageCollection = client.db("fitLifeDb").collection('pack');
+    const cartCollection = client.db("bistroDb").collection("carts");
 
+    
 
     // =============== auth related api ======================
     
@@ -297,6 +300,42 @@ async function run() {
       const email = req.params.email;
       const query = {email: email}
       const result = await slotCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // packages start
+    // get all packages
+    app.get('/packages', async(req, res) => {
+      const result = await packageCollection.find().toArray();
+      res.send(result);
+    })
+
+
+    // cart collection
+
+    // create
+    app.post('/carts', async(req, res) => {
+      const cartItem = req.body;
+      const result = await cartCollection.insertOne(cartItem);
+      res.send(result);
+    })
+    //get all cart
+    // app.get('/carts', async(req, res) => {
+    //   const result = await cartCollection.find().toArray();
+    //   res.send(result);
+    // })
+
+    //get only those cart which email's user added the cart
+    // app.get('/carts', async(req, res) => {
+    //   const email = req.query.email;
+    //   const query = {email: email}
+    //   const result = await cartCollection.find(query).toArray();
+    //   res.send(result);
+    // })
+    app.get('/carts/:email', async(req, res) => {
+      const email = req.query.email;
+      const query = {email: email}
+      const result = await cartCollection.find(query).toArray();
       res.send(result);
     })
 
