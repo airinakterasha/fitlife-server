@@ -42,6 +42,7 @@ async function run() {
     const slotCollection = client.db("fitLifeDb").collection('slot');
     const packageCollection = client.db("fitLifeDb").collection('pack');
     const cartCollection = client.db("fitLifeDb").collection("carts");
+    const forumCollection = client.db("fitLifeDb").collection("forum");
 
     
 
@@ -346,6 +347,19 @@ async function run() {
       const query = {email: email}
       console.log(query)
       const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // forum
+    //create
+    app.post('/forum', async(req, res) => {
+      const forum = req.body;
+      const result = await forumCollection.insertOne(forum);
+      res.send(result);
+    })
+    //get
+    app.get('/forum', async(req, res) => {
+      const result = await forumCollection.find().toArray();
       res.send(result);
     })
 
