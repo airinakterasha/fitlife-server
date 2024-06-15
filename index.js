@@ -125,7 +125,18 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
-    
+    // make default member as trainer 
+    app.patch('/rowuser/:id', verifyToken, async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          role: 'trainer',        
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
 
     // make role admin update ------------------------------------------------------------------------
     app.patch('/users/admin/:id', verifyToken, verifyAdmin, async(req, res) => {
@@ -361,6 +372,21 @@ async function run() {
     app.get('/forum', async(req, res) => {
       const result = await forumCollection.find().toArray();
       res.send(result);
+    })
+
+    //get
+    app.patch('/voting/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const vote = req.body.vote
+      console.log(vote);
+      if(vote === 'upvote'){
+        const result = await forumCollection.updateOne(query, {$inc:{upVote:1}});
+      } else {
+        const result = await forumCollection.updateOne(query, {$inc:{downVote:1}});
+      }
+      
+      res.send('vote done');
     })
 
 
