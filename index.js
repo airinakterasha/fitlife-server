@@ -43,6 +43,7 @@ async function run() {
     const packageCollection = client.db("fitLifeDb").collection('pack');
     const cartCollection = client.db("fitLifeDb").collection("carts");
     const forumCollection = client.db("fitLifeDb").collection("forum");
+    const profileCollection = client.db("fitLifeDb").collection("profile");
 
     
 
@@ -51,6 +52,7 @@ async function run() {
     // jwt related api
     app.post('/jwt', async(req, res) => {
       const user = req.body;
+      console.log(user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h'})
       res.send({token})
     })
@@ -69,6 +71,7 @@ async function run() {
           return res.status(401).send({message: 'unauthorized access'});
         }
         req.decoded = decoded;
+        console.log(req.decoded);
         next();
       });
     }
@@ -125,6 +128,19 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
+
+    app.get('/allusers', async(req, res) => {
+      const cursor = userCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    app.get('/allusers/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {email: email};
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    })
+
     // make default member as trainer 
     app.patch('/rowuser/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
@@ -166,7 +182,7 @@ async function run() {
       res.send({admin});
     })
 
-    
+    // Trainer api start from here  ----------------------------------------------------------------
 
     // Be a trainer related api
     app.post('/betrainer', verifyToken, async(req, res) => {
@@ -193,6 +209,13 @@ async function run() {
       res.send(result)
     })
 
+    app.delete('/betrainer/:id', verifyToken, verifyAdmin, async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await trainerCollection.deleteOne(query);
+      res.send(result);
+    })
+
     //get by email
     app.get('/trainer/:email', async(req, res) => {
       const email = req.params.email;
@@ -212,8 +235,16 @@ async function run() {
         }
       }
       const result = await trainerCollection.updateOne(filter, updateDoc);
+      const result2 = await userCollection.updateOne({email:req.body.userEmail}, {
+        $set: {
+          role: 'trainer',
+          status: 'approved',  
+      }
+      });
+      console.log(result2)
       res.send(result);
     })
+ 
 
     // delete user
     app.delete('/users/:id', verifyToken, verifyAdmin, async(req, res) => {
@@ -303,13 +334,6 @@ async function run() {
       res.send(result);
     })
 
-    // app.delete('/users/:id', verifyToken, verifyAdmin, async(req, res) => {
-    //   const id = req.params.id;
-    //   const query = {_id: new ObjectId(id)}
-    //   const result = await userCollection.deleteOne(query);
-    //   res.send(result);
-    // })
-    // delete slot
     app.delete('/slot/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
@@ -370,12 +394,13 @@ async function run() {
     })
     //get
     app.get('/forum', async(req, res) => {
-      const result = await forumCollection.find().toArray();
+      const result = await forumCollection.find().sort({ forumCreated: -1 }).toArray();
       res.send(result);
     })
+    
 
     //get
-    app.patch('/voting/:id', async(req, res) => {
+    app.patch('/voting/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const vote = req.body.vote
@@ -388,6 +413,18 @@ async function run() {
       
       res.send('vote done');
     })
+    // profile start -------------------------------------------------------------------------------
+    app.post('/profile', async(req, res) => {
+      const profile = req.body;
+      const result = await profileCollection.insertOne(profile);
+      res.send(result);
+    })
+    //get
+    app.get('/profile', async(req, res) => {
+      const result = await profileCollection.find();
+      res.send(result);
+    })
+
 
 
     // Send a ping to confirm a successful connection
