@@ -2,7 +2,7 @@ const express = require('express')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
+//const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
@@ -14,7 +14,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-app.use(cookieParser());
+//app.use(cookieParser());
 
 
 
@@ -44,6 +44,7 @@ async function run() {
     const cartCollection = client.db("fitLifeDb").collection("carts");
     const forumCollection = client.db("fitLifeDb").collection("forum");
     const profileCollection = client.db("fitLifeDb").collection("profile");
+    const subscribeCollection = client.db("fitLifeDb").collection("subscribe");
 
     
 
@@ -422,6 +423,17 @@ async function run() {
     //get
     app.get('/profile', async(req, res) => {
       const result = await profileCollection.find();
+      res.send(result);
+    })
+    // subscribe api -------------------------------------------------------------------------------
+    app.post('/subscribe', async(req, res) => {
+      const subscriber = req.body;
+      const result = await subscribeCollection.insertOne(subscriber);
+      res.send(result);
+    })
+    //get
+    app.get('/subscribe', async(req, res) => {
+      const result = await subscribeCollection.find();
       res.send(result);
     })
 
