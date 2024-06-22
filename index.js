@@ -2,7 +2,6 @@ const express = require('express')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const jwt = require('jsonwebtoken');
-//const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
@@ -14,7 +13,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-//app.use(cookieParser());
 
 
 
@@ -45,6 +43,7 @@ async function run() {
     const forumCollection = client.db("fitLifeDb").collection("forum");
     const profileCollection = client.db("fitLifeDb").collection("profile");
     const subscribeCollection = client.db("fitLifeDb").collection("subscribe");
+    const reviewCollection = client.db("fitLifeDb").collection("review");
 
     
 
@@ -53,7 +52,7 @@ async function run() {
     // jwt related api
     app.post('/jwt', async(req, res) => {
       const user = req.body;
-      console.log(user);
+      //console.log(user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h'})
       res.send({token})
     })
@@ -72,7 +71,7 @@ async function run() {
           return res.status(401).send({message: 'unauthorized access'});
         }
         req.decoded = decoded;
-        console.log(req.decoded);
+        //console.log(req.decoded);
         next();
       });
     }
@@ -196,6 +195,7 @@ async function run() {
       const result = await trainerCollection.insertOne(trainer);
       res.send(result);
     })
+
     // get all trainer
     app.get('/betrainer', async(req, res) => {
       const result = await trainerCollection.find().toArray();
@@ -222,7 +222,7 @@ async function run() {
       const email = req.params.email;
       const query = {email:email}
       const result = await trainerCollection.findOne(query);
-      console.log(result);
+      //console.log(result);
       res.send(result)
     })
 
@@ -236,13 +236,31 @@ async function run() {
         }
       }
       const result = await trainerCollection.updateOne(filter, updateDoc);
-      const result2 = await userCollection.updateOne({email:req.body.userEmail}, {
+      //const email = 
+      //console.log(req.body.email);
+      const result2 = await userCollection.updateOne({email:req.body.email}, {
         $set: {
           role: 'trainer',
           status: 'approved',  
       }
       });
-      console.log(result2)
+      //console.log('result trainer 2', result2)
+      res.send(result);
+    })
+
+    app.patch('/reject/:id', verifyToken, async(req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const { feedbackText } = req.body;
+      const options = {upsert: true};
+      const updateDoc = {
+        $set: {
+          role: 'member',
+          status: 'rejected',  
+          feedback: feedbackText,         
+        }
+      }
+      const result = await trainerCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     })
  
@@ -296,24 +314,39 @@ async function run() {
     })
 
     // class related api
+
      //create
     app.post('/class', async(req, res) => {
     const classes = req.body;
-    console.log(classes);
+    //console.log(classes);
     const result = await classCollection.insertOne(classes);
     res.send(result);
     })
-    //get all
+    
+     // get all classes with pagination
     app.get('/class', async(req, res) => {
-      const result = await classCollection.find().toArray();
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      //console.log('pagination query', page, size);
+      //const result = await queryCollection.find().toArray();
+      const result = await classCollection.find()
+      .skip(page * size)
+      .limit(size)
+      .toArray();
       res.send(result);
     })
+
+    app.get('/classCount', async (req, res) => {
+      const count = await classCollection.estimatedDocumentCount();
+      res.send({ count });
+    })
+
+    
     //get single class
     app.get('/class/:id', async(req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const result = await classCollection.findOne(query);
-      //console.log(result);
       res.send(result)
     })
 
@@ -380,9 +413,10 @@ async function run() {
 
     app.get('/cart', async(req, res) => {
       const email = req.query.email;
-      const query = {email: email}
-      console.log(query)
+      const query = {clientEmail: email}
+      //console.log(query)
       const result = await cartCollection.find(query).toArray();
+      //console.log(result);
       res.send(result);
     })
 
@@ -398,14 +432,21 @@ async function run() {
       const result = await forumCollection.find().sort({ forumCreated: -1 }).toArray();
       res.send(result);
     })
+    // get single forum
+    app.get('/forum/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await forumCollection.findOne(query);
+      res.send(result);
+    })
     
 
-    //get
+    //voting
     app.patch('/voting/:id', verifyToken, async(req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const vote = req.body.vote
-      console.log(vote);
+      //console.log(vote);
       if(vote === 'upvote'){
         const result = await forumCollection.updateOne(query, {$inc:{upVote:1}});
       } else {
@@ -433,7 +474,18 @@ async function run() {
     })
     //get
     app.get('/subscribe', async(req, res) => {
-      const result = await subscribeCollection.find();
+      const result = await subscribeCollection.find().toArray();
+      res.send(result);
+    })
+    // review api -------------------------------------------------------------------------------
+    app.post('/review', async(req, res) => {
+      const profile = req.body;
+      const result = await reviewCollection.insertOne(profile);
+      res.send(result);
+    })
+    //get
+    app.get('/review', async(req, res) => {
+      const result = await reviewCollection.find().toArray();
       res.send(result);
     })
 
