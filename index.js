@@ -341,7 +341,7 @@ async function run() {
       res.send({ count });
     })
 
-    
+
     //get single class
     app.get('/class/:id', async(req, res) => {
       const id = req.params.id;
@@ -350,6 +350,11 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/fatured-class', async(req, res) => {
+      const result = await classCollection.find().sort({ bookedCount  }).toArray();
+      res.send(result);
+    })
+    //const result = await forumCollection.find().sort({ forumCreated: -1 }).toArray();
     // add new slot
     //create
     app.post('/slot', async(req, res) => {
@@ -395,13 +400,17 @@ async function run() {
       res.send(result);
     })
 
-
-    // cart collection
-
     // create
     app.post('/carts', async(req, res) => {
       const cartItem = req.body;
+      const bookedClasses = cartItem.booked
       const result = await cartCollection.insertOne(cartItem);
+      if(result){
+        bookedClasses.forEach(element => {
+          classCollection.updateMany({_id: new ObjectId(element.value)}, {$inc:{"bookedCount": 1}})  
+
+        });
+      }
       res.send(result);
     })
     //get all cart
