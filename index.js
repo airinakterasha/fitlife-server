@@ -7,6 +7,9 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5555;
 
+//stripe
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 // middleware
 app.use(
   cors({
@@ -43,6 +46,7 @@ async function run() {
     const profileCollection = client.db("fitLifeDb").collection("profile");
     const subscribeCollection = client.db("fitLifeDb").collection("subscribe");
     const reviewCollection = client.db("fitLifeDb").collection("review");
+    const paymentCollection = client.db("fitLifeDb").collection("payments");
 
     // =============== auth related api ======================
 
@@ -532,6 +536,49 @@ async function run() {
       const result = await reviewCollection.find().toArray();
       res.send(result);
     });
+
+    //payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100)
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: [
+          "card",
+        ],
+      })
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+
+    });
+
+    app.post('/payments', async(req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+      console.log('payment info', payment)
+      //carefully delete each item from the cart
+      const query = {_id: {
+        $in: payment.cartIds.map(id => new ObjectId(id))
+      }};
+      const deleteResult = await cartCollection.deleteMany(query);
+
+      res.send({paymentResult, deleteResult});
+    })
+
+    app.get('/payments/:email', verifyToken, async(req, res) => {
+      const query = {email : req.params.email}
+      console.log(query);
+      console.log(req.decoded?.email);
+      if(req.params.email !== req.decoded.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     //await client.db("admin").command({ ping: 1 });
